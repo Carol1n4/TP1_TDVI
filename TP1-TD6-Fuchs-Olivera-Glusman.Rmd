@@ -121,7 +121,7 @@ tamano_entrenamiento <- 0.7 * datos_totales
 tamano_validacion <- 0.15 * datos_totales
 tamano_testeo <- datos_totales - tamano_entrenamiento - tamano_validacion
 
-set.seed(0309)
+set.seed(1234)
 indices <- sample(1:datos_totales)
 
 entrenamiento_indices <- indices[1:tamano_entrenamiento]  # 70% de los datos
@@ -288,7 +288,7 @@ random_search <- function(train_data, valid_data, n) {
     stringsAsFactors = FALSE
   )
   
-  set.seed(777) # replicabilidad
+  set.seed(1234)
   
   for (i in 1:n) {
     # hiperparámetros aleatorios
@@ -411,8 +411,8 @@ auc_test
 
 ```
 
-
-AGREGAR COMPARACION ENTRE ARBOL DEL EJ3
+ Comparar el rendimiento en el conjunto de testeo del árbol básico (del punto 3) con el árbol
+optimizado. Presentar conclusiones.
 
 ##ejercicio 5
 rpart.plot(tree)
@@ -424,6 +424,7 @@ rpart.plot(best_tree)
 Presentar y explicar el árbol optimizado final, indicando diferencias respecto al presentado en la
 sección 3.
 - Identificar y discutir las variables más importantes según el árbol de decisión optimizado
+
 
 ##Ejercicio 6
 
@@ -449,6 +450,7 @@ corrupt_labels <- function(data, p, seed = 1234) {
 
 ```
 
+Armamos los nuevos datos de train corruptos: 
 ```{r}
 corruptos1 <- corrupt_labels(data = train_data, p = 0.05)
 corruptos2 <- corrupt_labels(data = train_data, p = 0.10)
@@ -458,11 +460,126 @@ corruptos5 <- corrupt_labels(data = train_data, p = 0.25)
 corruptos6 <- corrupt_labels(data = train_data, p = 0.30)
 ```
 
+Buscamos el mejor arbol con los datos de validación:
 ```{r}
+rs1 <- random_search(corruptos1, valid_data, n = 1000)  
+
+
+rs2 <- random_search(corruptos2, valid_data, n = 1000)  
+
+
+rs3 <- random_search(corruptos3, valid_data, n = 1000)  
+
+
+rs4 <- random_search(corruptos4, valid_data, n = 1000)  
+
+
+rs5 <- random_search(corruptos5, valid_data, n = 1000)  
+
+
+rs6 <- random_search(corruptos6, valid_data, n = 1000)  
+
+```
+
+Creamos una tabla para poder ver los valores y compararlos 
+
+```{r}
+
+rs_map <- list(
+  "5%"  = rs1,
+  "10%" = rs2,
+  "15%" = rs3,
+  "20%" = rs4,
+  "25%" = rs5,
+  "30%" = rs6
+)
+
+tab <- do.call(rbind, lapply(names(rs_map), function(pct){
+  bm <- rs_map[[pct]]$best_model
+  data.frame(
+    id             = pct,
+    maxdepth       = bm$maxdepth,
+    minsplit       = bm$minsplit,
+    minbucket      = bm$minbucket,
+    AUC_Validation = round(bm$AUC_Validation, 4),
+    row.names = NULL
+  )
+}))
+
+knitr::kable(tab, align = "c", caption = "Random search por % de etiquetas corruptas")
+
+
+```
+
+
+
+cambiar para que sea con estos datos:
+```{r}
+best_tree <- rpart(
+  loan_status ~ ., 
+  data = rbind(train_data,valid_data), 
+  method = "class",
+  control = rpart.control(
+    minsplit  = rs$best_model$minsplit,
+    minbucket = rs$best_model$minbucket,
+    maxdepth  = rs$best_model$maxdepth,
+    cp = 0,
+    xval = 0
+  )
+)
+
+prob_best <- predict(best_tree, newdata = test_data, type = "prob")[, "Rechazado"]
 
 ```
 
 ```{r}
-rs1 <- random_search(corruptos1, valid_data, n = 100)  
-rs1$best_model    # hiperparámetros y AUC de validación del mejor
+
+lvl <- c("Aprobado", "Rechazado")
+train_data$loan_status <- factor(train_data$loan_status, levels = lvl)
+valid_data$loan_status <- factor(valid_data$loan_status, levels = lvl)
+test_data$loan_status   <- factor(test_data$loan_status, levels = lvl)
+
+# entrenar con los hiperparámetros encontrados
+best_tree <- rpart(
+  loan_status ~ ., 
+  data = rbind(train_data,valid_data), 
+  method = "class",
+  control = rpart.control(
+    minsplit  = rs$best_model$minsplit,
+    minbucket = rs$best_model$minbucket,
+    maxdepth  = rs$best_model$maxdepth,
+    cp = 0,
+    xval = 0
+  )
+)
+
+# predecir probabilidades en test
+probas_test <- predict(best_tree, newdata = test_data, type = "prob")[, "Rechazado"]
+
+# calcular curva ROC y AUC
+roc_test <- roc(response = test_data$loan_status,
+                predictor = probas_test,
+                levels = lvl,
+                quiet = TRUE)
+
+auc_test <- auc(roc_test)
+auc_test
+
 ```
+
+
+Comparen el rendimiento en testeo del mejor árbol obtenido con la performance obtenida
+por el árbol optimizado del punto 5.
+- Analicen y discutan lo siguiente:
+- Cómo cambia el rendimiento del modelo a medida que aumenta el porcentaje de etiquetas
+corruptas. En particular, analizar y discutir si la degradación de la performance es lineal,
+acelerada o si presenta umbrales críticos.
+- Cómo cambia el valor de los diferentes hiperparámetros óptimos a medida que aumenta el
+porcentaje de etiquetas corruptas.
+Para estos análisis deberán presentar gráficos sobre los que se apoye su discusión.
+
+
+
+##Ejercicio 7
+
+falta entero
