@@ -421,12 +421,48 @@ rpart.plot(tree)
 rpart.plot(best_tree)
 ```
 
+Presentar y explicar el árbol optimizado final, indicando diferencias respecto al presentado en la
+sección 3.
+- Identificar y discutir las variables más importantes según el árbol de decisión optimizado
 
+##Ejercicio 6
 
 ```{r}
-best_tree$control$minsplit
-best_tree$control$minbucket
-best_tree$control$maxdepth
+corrupt_labels <- function(data, p, seed = 1234) {
+  set.seed(seed)
+  datos_corruptos <- data
+  
+  n <- nrow(data)
+  n_corrupt <- round(p * n)
+  indices_corrupt <- sample(1:n, n_corrupt, replace = FALSE)
+  
+  # invertir etiquetas
+  for (i in indices_corrupt) {
+    if (datos_corruptos$loan_status[i] == "Aprobado") {
+      datos_corruptos$loan_status[i] <- "Rechazado"
+    } else {
+      datos_corruptos$loan_status[i] <- "Aprobado"
+    }
+  }
+  return(datos_corruptos)
+}
+
 ```
 
+```{r}
+corruptos1 <- corrupt_labels(data = train_data, p = 0.05)
+corruptos2 <- corrupt_labels(data = train_data, p = 0.10)
+corruptos3 <- corrupt_labels(data = train_data, p = 0.15)
+corruptos4 <- corrupt_labels(data = train_data, p = 0.20)
+corruptos5 <- corrupt_labels(data = train_data, p = 0.25)
+corruptos6 <- corrupt_labels(data = train_data, p = 0.30)
+```
 
+```{r}
+
+```
+
+```{r}
+rs1 <- random_search(corruptos1, valid_data, n = 100)  
+rs1$best_model    # hiperparámetros y AUC de validación del mejor
+```
