@@ -1029,4 +1029,26 @@ generales.
 
 ##Ejercicio 7
 
-falta entero
+###Hallazgos principales
+
+En primer lugar, hallamos que hay un gran desbalance de los datos. Hay aprox 78% de Rechazados y 22% de Aprobados. El árbol básico rinde bien en general (AUC aprox 0.94), pero por el desbalance falla más en detectar Aprobados.
+
+Con random search y límites en los hiperparametros, el modelo mejora (AUC aprox 0.9675 en test).
+
+Al agregar hasta 15% de corrupción en las etiquetas casi no hay diferencia.A partir de 20% cae el AUC. Con más ruido, suben minsplit/minbucket.
+
+###Efectividad del árbol de decisión para el problema planteado
+
+Se puede ver que los arboles de decisionson una buena herramienta para el problema planteado. 
+Funcionan bien y son faciles de interpretar. Pero igualmente, en este caso con fuerte desbalance de clases no termina siendo del todo eficiente para predecir los casos minoritarios (en este caso los aprobados).
+
+###Posibles mejoras o direcciones futuras para el análisis
+
+Aplicariamos alguna tecnica de balanceo de clases.
+
+Usaríamos otro método de validación, como por ejemplo cross-validation, ya que nos permite probar el modelo varias veces dividiendo los datos en distintos grupos y rotando cuál se usa para entrenar y cuál para testear. 
+Asi, tendriamos una evaluación más confiable del desempeño, y no dependeriamos de una sola partición de datos. 
+
+En conclusión, los árboles de decisión mostraron buen rendimiento y son fáciles de interpretar, pero el desbalance limita su capacidad para predecir los casos minoritarios. Con técnicas de balanceo y validación más completas se podría mejorar la detección de los aprobados y tener una evaluación más confiable del modelo.
+
+
